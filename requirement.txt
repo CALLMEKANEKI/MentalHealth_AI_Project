@@ -1,0 +1,8 @@
+pandas
+openpyxl
+openpyxl
+transformers
+scikit-learn
+underthesea
+pyvi
+tqdm

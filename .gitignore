@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Data & Models (Vì chúng rất nặng, thường không đưa lên GitHub)
+data/raw/
+data/processed/
+checkpoints/
+*.pth
+*.bin
+
+# OS
+.DS_Store
+Thumbs.db
