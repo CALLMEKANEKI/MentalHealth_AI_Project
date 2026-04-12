@@ -1,21 +1,35 @@
+import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoConfig
+from transformers import AutoModel
 
-class PhoBERTForSentiment(nn.Module):
-    def __init__(self, num_labels):
-        super(PhoBERTForSentiment, self).__init__()
-        model_name = "vinai/phobert-base"
-        # Thêm tham số use_safetensors=True ở đây
-        self.phobert = AutoModel.from_pretrained(model_name, use_safetensors=True)
-        # Tầng Dropout để chống học vẹt (Overfitting)
-        self.dropout = nn.Dropout(0.3)
-        # Tầng Tuyến tính để phân loại (đầu ra là số lượng nhãn của bạn)
-        self.classifier = nn.Linear(self.phobert.config.hidden_size, num_labels)
+class PhoBERTMultiTask(nn.Module):
+    def __init__(self, num_emotion_labels=7, num_hate_labels=3):
+        super(PhoBERTMultiTask, self).__init__()
+        # Load phần thân PhoBERT
+        self.phobert = AutoModel.from_pretrained(
+            "vinai/phobert-base", 
+            use_safetensors=True  # Sử dụng định dạng an toàn để tránh lỗ hổng bảo mật
+        )
+        
+        # Dropout để chống Overfitting (học vẹt)
+        self.dropout = nn.Dropout(0.1)
+        
+        # Nhánh 1: Dự đoán cảm xúc (Emotion)
+        self.emotion_head = nn.Linear(768, num_emotion_labels)
+        
+        # Nhánh 2: Dự đoán độc hại (Hate Speech)
+        self.hate_head = nn.Linear(768, num_hate_labels)
 
     def forward(self, input_ids, attention_mask):
         # Đưa dữ liệu qua PhoBERT
         outputs = self.phobert(input_ids=input_ids, attention_mask=attention_mask)
-        # Lấy vector đại diện của câu (từ token [CLS] - thường là đầu ra đầu tiên)
-        pooled_output = outputs[1] 
+        
+        # Lấy vector đại diện của toàn bộ câu (CLS token)
+        pooled_output = outputs.last_hidden_state[:, 0, :]
         pooled_output = self.dropout(pooled_output)
-        return self.classifier(pooled_output)
+        
+        # Đẩy qua 2 đầu độc lập
+        emotion_logits = self.emotion_head(pooled_output)
+        hate_logits = self.hate_head(pooled_output)
+        
+        return emotion_logits, hate_logits

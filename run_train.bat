@@ -7,7 +7,7 @@ echo Dang kiem tra GPU...
 python -c "import torch; print('CUDA Ready:', torch.cuda.is_available())"
 
 echo Bat dau huan luyen mo hinh PhoBERT...
-python scripts/train.py
+python scripts/train_multitask.py
 
 echo Da hoan thanh! Nhan phim bat ky de thoat.
 pause
