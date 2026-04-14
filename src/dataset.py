@@ -15,7 +15,6 @@ class MultiTaskDataset(Dataset):
     def __getitem__(self, idx):
         text = str(self.texts[idx])
         
-        # Thay vì dùng self.tokenizer.encode_plus, hãy dùng trực tiếp self.tokenizer(...)
         encoding = self.tokenizer(
             text,
             add_special_tokens=True,
@@ -23,12 +22,12 @@ class MultiTaskDataset(Dataset):
             padding='max_length',
             truncation=True,
             return_attention_mask=True,
-            return_tensors='pt'
+            return_tensors=None 
         )
 
         return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
+            'input_ids': torch.tensor(encoding['input_ids'], dtype=torch.long),
+            'attention_mask': torch.tensor(encoding['attention_mask'], dtype=torch.long),
             'emotion_labels': torch.tensor(self.emotion_labels[idx], dtype=torch.long),
             'hate_labels': torch.tensor(self.hate_labels[idx], dtype=torch.long)
         }

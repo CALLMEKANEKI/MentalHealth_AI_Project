@@ -18,8 +18,10 @@ project_root = os.path.dirname(current_dir)
 sys.path.append(os.path.join(project_root, 'src'))
 
 from preprocess import TextCleaner
-from dataset import MultiTaskDataset # Đảm bảo bạn đã cập nhật class này trong dataset.py
-from models import PhoBERTMultiTask  # Sử dụng class model 2 đầu
+from dataset import MultiTaskDataset 
+from models import PhoBERTMultiTask  
+from class_weights import get_emotion_weights
+
 def evaluate_multitask(model, dataloader, device):
     model.eval()
     
@@ -57,8 +59,8 @@ def evaluate_multitask(model, dataloader, device):
 
 def train():
     # --- THAM SỐ ---
-    EPOCHS = 10
-    BATCH_SIZE = 16
+    EPOCHS = 15
+    BATCH_SIZE = 12
     MAX_LEN = 128
     LEARNING_RATE = 2e-5
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -97,6 +99,9 @@ def train():
     df_combined = pd.concat([data_uit, data_vihsd], ignore_index=True)
     df_combined = df_combined.sample(frac=1).reset_index(drop=True) # Xáo trộn
 
+
+    true_emotion_labels = df_combined[df_combined['emotion'] != -100]['emotion'].tolist()
+    emotion_weights = get_emotion_weights(true_emotion_labels).to(DEVICE)
     # --- 2.2 XỬ LÝ DỮ LIỆU VALID ĐA NHIỆM ---
     # Load UIT Valid
     df_uit_val = pd.read_excel(valid_uit_path)
@@ -139,18 +144,33 @@ def train():
     )
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 
-    # --- 4. KHỞI TẠO MÔ HÌNH ---
+    # --- 5. KHỞI TẠO MÔ HÌNH ---
     model = PhoBERTMultiTask(num_emotion_labels=len(le_emotion.classes_), num_hate_labels=3)
     model.to(DEVICE)
 
-    optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
+    # --- Kỹ thuật 2: Differential Learning Rate ---
+    # PhoBERT học chậm (2e-5), các lớp Head học nhanh hơn (1e-4) để khớp dữ liệu
+    optimizer_grouped_parameters = [
+        {'params': model.phobert.parameters(), 'lr': 2e-5},
+        {'params': model.emotion_head.parameters(), 'lr': 1e-4},
+        {'params': model.hate_head.parameters(), 'lr': 1e-4}
+    ]
+    optimizer = AdamW(optimizer_grouped_parameters)
+
+    # --- Kỹ thuật 3: Label Smoothing ---
+    # Giúp mô hình không bị Overfitting vào các nhãn nhiễu
+    criterion_emotion = nn.CrossEntropyLoss(
+        weight=emotion_weights, 
+        ignore_index=-100, 
+        label_smoothing=0.1 
+    )
+    criterion_hate = nn.CrossEntropyLoss(ignore_index=-100, label_smoothing=0.1)
+
     
     # Scheduler: "Học nhanh lúc đầu, chậm lúc sau"
     total_steps = len(train_loader) * EPOCHS
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
-
-    criterion_emotion = nn.CrossEntropyLoss(ignore_index=-100)
-    criterion_hate = nn.CrossEntropyLoss(ignore_index=-100)
+    num_warmup_steps = int(0.1 * total_steps)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=total_steps)
 
     # --- 5. VÒNG LẶP HUẤN LUYỆN ---
     best_acc = 0
@@ -158,9 +178,23 @@ def train():
     for epoch in range(EPOCHS):
         model.train()
         total_loss = 0
-        loop = tqdm(train_loader, desc=f"✨ Epoch {epoch+1}/{EPOCHS}")
+        
+        # Thiết lập trọng số theo giai đoạn
+        if epoch + 1 <= 3:
+            w_e, w_h = 0.5, 0.5
+            strategy_note = "Warm-up: Equal Focus"
+        elif epoch + 1 <= 12:
+            w_e, w_h = 0.7, 0.3
+            strategy_note = "Main Training: Emotion Focus"
+        else:
+            w_e, w_h = 0.8, 0.2
+            strategy_note = "Final Squeeze: Max Emotion Focus"
+        
+        print(f"\n--- Chiến lược Epoch {epoch+1}: {strategy_note} [E:{w_e} - H:{w_h}] ---")
 
-        for batch in loop:
+        loop = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"✨ Epoch {epoch+1}/{EPOCHS}")
+
+        for batch_idx, batch in loop:
             optimizer.zero_grad()
             
             input_ids = batch['input_ids'].to(DEVICE)
@@ -173,20 +207,19 @@ def train():
             loss_e = criterion_emotion(emo_logits, emotion_labels)
             loss_h = criterion_hate(hate_logits, hate_labels)
             
-            batch_loss = loss_e*0.6  + loss_h*0.4  # Điều chỉnh trọng số nếu muốn ưu tiên task nào hơn
-            batch_loss.backward()
+            # Tính Loss tổng hợp theo trọng số động
+            batch_loss = (loss_e * w_e) + (loss_h * w_h) 
             
+            batch_loss.backward()
             optimizer.step()
-            scheduler.step() # Cập nhật Learning Rate
+            scheduler.step()
 
             total_loss += batch_loss.item()
             loop.set_postfix(loss=f"{batch_loss.item():.4f}", E=f"{loss_e.item():.2f}", H=f"{loss_h.item():.2f}")
 
-        # Cuối mỗi Epoch trong vòng lặp Train
+        # --- ĐÁNH GIÁ SAU MỖI EPOCH ---
         val_acc_emo, val_acc_hate = evaluate_multitask(model, valid_loader, DEVICE)
-        print(f"📊 Accuracy - [Emotion: {val_acc_emo:.4f}] | [Hate: {val_acc_hate:.4f}]")
-
-        # Lưu model dựa trên trung bình cộng Accuracy của 2 Task
+        print(f"📊 Kết quả Epoch {epoch+1}: [Emotion Acc: {val_acc_emo:.4f}] | [Hate Acc: {val_acc_hate:.4f}]")
         avg_acc = (val_acc_emo + val_acc_hate) / 2
         if avg_acc > best_acc:
             best_acc = avg_acc
