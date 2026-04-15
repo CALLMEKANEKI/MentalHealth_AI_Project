@@ -29,6 +29,12 @@ from models import PhoBERTMultiTask
 from class_weights import get_emotion_weights
 
 # ==================== HÀM TIỆN ÍCH ====================
+def safe_loss(criterion, logits, labels, ignore_index=-100):
+    mask = labels != ignore_index
+    if not mask.any():
+        return torch.tensor(0.0, device=logits.device, requires_grad=True)
+    return criterion(logits[mask], labels[mask])
+
 def compute_class_weights_for_sampler(labels):
     """Tính trọng số cho từng mẫu để oversampling lớp hiếm"""
     from collections import Counter
@@ -296,8 +302,8 @@ def train():
             # Forward with mixed precision
             with torch.cuda.amp.autocast(enabled=USE_AMP):
                 emo_logits, hate_logits = model(input_ids, attention_mask)
-                loss_e = criterion_emotion(emo_logits, emotion_labels)
-                loss_h = criterion_hate(hate_logits, hate_labels)
+                loss_e = safe_loss(criterion_emotion, emo_logits, emotion_labels)
+                loss_h = safe_loss(criterion_hate, hate_logits, hate_labels)
                 # Uncertainty weighting
                 loss = uncertainty_loss(torch.stack([loss_e, loss_h]))
             
