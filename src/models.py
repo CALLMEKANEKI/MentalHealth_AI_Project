@@ -1,35 +1,46 @@
-import torch
 import torch.nn as nn
 from transformers import AutoModel
+import torch
 
 class PhoBERTMultiTask(nn.Module):
-    def __init__(self, num_emotion_labels=7, num_hate_labels=3):
+    def __init__(self, num_emotion_labels, num_hate_labels):
         super(PhoBERTMultiTask, self).__init__()
-        # Load phần thân PhoBERT
-        self.phobert = AutoModel.from_pretrained(
-            "vinai/phobert-base", 
-            use_safetensors=True  # Sử dụng định dạng an toàn để tránh lỗ hổng bảo mật
+        # Backbone PhoBERT
+        self.phobert = AutoModel.from_pretrained("vinai/phobert-base", use_safetensors=True)
+        
+        hidden_size = self.phobert.config.hidden_size # Thường là 768
+        intermediate_size = 256 # Kích thước lớp ẩn trung gian
+
+        # --- Nâng cấp Head cho Emotion ---
+        self.emotion_head = nn.Sequential(
+            nn.Linear(hidden_size, intermediate_size),
+            nn.BatchNorm1d(intermediate_size), # Giúp mô hình hội tụ nhanh và ổn định
+            nn.ReLU(),
+            nn.Dropout(0.3), # Giảm hiện tượng học vẹt (overfitting)
+            nn.Linear(intermediate_size, num_emotion_labels)
         )
-        
-        # Dropout để chống Overfitting (học vẹt)
-        self.dropout = nn.Dropout(0.1)
-        
-        # Nhánh 1: Dự đoán cảm xúc (Emotion)
-        self.emotion_head = nn.Linear(768, num_emotion_labels)
-        
-        # Nhánh 2: Dự đoán độc hại (Hate Speech)
-        self.hate_head = nn.Linear(768, num_hate_labels)
+
+        # --- Nâng cấp Head cho Hate Speech ---
+        self.hate_head = nn.Sequential(
+            nn.Linear(hidden_size, intermediate_size),
+            nn.BatchNorm1d(intermediate_size),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(intermediate_size, num_hate_labels)
+        )
 
     def forward(self, input_ids, attention_mask):
-        # Đưa dữ liệu qua PhoBERT
         outputs = self.phobert(input_ids=input_ids, attention_mask=attention_mask)
-        
-        # Lấy vector đại diện của toàn bộ câu (CLS token)
-        pooled_output = outputs.last_hidden_state[:, 0, :]
-        pooled_output = self.dropout(pooled_output)
-        
-        # Đẩy qua 2 đầu độc lập
-        emotion_logits = self.emotion_head(pooled_output)
-        hate_logits = self.hate_head(pooled_output)
-        
-        return emotion_logits, hate_logits
+        last_hidden_state = outputs.last_hidden_state # [batch, seq_len, 768]
+
+        # --- Kỹ thuật Mean Pooling ---
+        # Tạo mask để không tính trung bình trên các token Padding
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+        sum_embeddings = torch.sum(last_hidden_state * input_mask_expanded, 1)
+        sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        mean_pooled = sum_embeddings / sum_mask
+
+        emo_logits = self.emotion_head(mean_pooled)
+        hate_logits = self.hate_head(mean_pooled)
+
+        return emo_logits, hate_logits

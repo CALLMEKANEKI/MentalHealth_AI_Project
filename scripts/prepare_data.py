@@ -16,11 +16,11 @@ def prepare_all_data():
     cleaner = TextCleaner(dict_path)
     
     data_files = [
-        {'raw': 'data/raw/UIT-VSEC/train_nor_811.xlsx', 'clean': 'data/processed/uit_train_clean.xlsx', 'col': 'Sentence'},
-        {'raw': 'data/raw/UIT-VSEC/test_nor_811.xlsx', 'clean': 'data/processed/uit_test_clean.xlsx', 'col': 'Sentence'},
-        {'raw': 'data/raw/UIT-VSEC/valid_nor_811.xlsx', 'clean': 'data/processed/uit_valid_clean.xlsx', 'col': 'Sentence'},
+        {'raw': 'data/raw/UIT-VSEMC/train_nor_811.xlsx', 'clean': 'data/processed/uit_train_clean.xlsx', 'col': 'Sentence'},
+        {'raw': 'data/raw/UIT-VSEMC/test_nor_811.xlsx', 'clean': 'data/processed/uit_test_clean.xlsx', 'col': 'Sentence'},
+        {'raw': 'data/raw/UIT-VSEMC/valid_nor_811.xlsx', 'clean': 'data/processed/uit_valid_clean.xlsx', 'col': 'Sentence'},
         {'raw': 'data/raw/ViHSD/xlsx/train_df.xlsx', 'clean': 'data/processed/vihsd_train_clean.xlsx', 'col': 'cmt_col'},
-        {'raw': 'data/raw/ViHSD/xlsx/val_df.xlsx', 'clean': 'data/processed/vihsd_val_clean.xlsx', 'col': 'cmt_col'},
+        {'raw': 'data/raw/ViHSD/xlsx/val_df.xlsx', 'clean': 'data/processed/vihsd_valid_clean.xlsx', 'col': 'cmt_col'},
         {'raw': 'data/raw/ViHSD/xlsx/test_df.xlsx', 'clean': 'data/processed/vihsd_test_clean.xlsx', 'col': 'cmt_col'}
     ]
 
