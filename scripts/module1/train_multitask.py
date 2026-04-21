@@ -15,12 +15,12 @@ from torch.optim import AdamW
 # 1. Cấu trúc đường dẫn
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.append(os.path.join(project_root, 'src'))
+sys.path.append(os.path.join(project_root, 'src', "module1"))
 
-from preprocess import TextCleaner
-from dataset import MultiTaskDataset 
-from models import PhoBERTMultiTask  
-from class_weights import get_emotion_weights
+from module1.preprocess import TextCleaner
+from module1.dataset import MultiTaskDataset 
+from module1.models import PhoBERTMultiTask  
+from module1.class_weights import get_emotion_weights
 
 def evaluate_multitask(model, dataloader, device):
     model.eval()

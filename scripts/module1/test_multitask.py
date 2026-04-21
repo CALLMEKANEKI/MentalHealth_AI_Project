@@ -9,11 +9,11 @@ from sklearn.metrics import accuracy_score, classification_report
 
 # Setup paths
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(project_root, 'src'))
+sys.path.append(os.path.join(project_root, 'src', "module1"))
 
-from dataset import MultiTaskDataset
-from models import PhoBERTMultiTask
-from preprocess import TextCleaner
+from module1.dataset import MultiTaskDataset
+from module1.models import PhoBERTMultiTask
+from module1.preprocess import TextCleaner
 
 # --- CẤU HÌNH ---
 model_path = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')

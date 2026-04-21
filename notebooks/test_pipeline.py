@@ -7,7 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.append(os.path.join(project_root, 'src'))
 
-from preprocess import TextCleaner
+from module1.preprocess import TextCleaner
 
 
 dict_path = os.path.join(project_root, 'data', 'external', 'Xử lý teencode.xlsx')
