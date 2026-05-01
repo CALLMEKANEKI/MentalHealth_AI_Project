@@ -1,96 +1,181 @@
 import os
 import sys
+import ast
+import json
 import torch
-import pandas as pd
 import numpy as np
-from torch.utils.data import DataLoader
+import pandas as pd
+from torch.utils.data import DataLoader, ConcatDataset
+from sklearn.metrics import classification_report, f1_score
 from transformers import AutoTokenizer
-from sklearn.metrics import accuracy_score, classification_report
 
-# Setup paths
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(project_root, 'src', "module1"))
+current_dir  = os.path.dirname(os.path.abspath(__file__))
+scripts_dir  = os.path.dirname(current_dir)
+project_root = os.path.dirname(scripts_dir)
 
-from module1.dataset import MultiTaskDataset
-from module1.models import PhoBERTMultiTask
-from module1.preprocess import TextCleaner
+if project_root not in sys.path:
+    sys.path.append(project_root)
+src_path = os.path.join(project_root, 'src')
+if src_path not in sys.path:
+    sys.path.append(src_path)
 
-# --- CẤU HÌNH ---
-model_path = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')
-uit_test_path = os.path.join(project_root, 'data', 'processed','uit_test_clean.xlsx')
-vihsd_test_path = os.path.join(project_root, 'data', 'processed', 'vihsd_test_clean.xlsx') 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"📁 project_root: {project_root}")
 
-def evaluate():
-    print(f"🚀 Đang đánh giá Multi-task Model trên: {device}")
-    
+from module1.dataset import MultiTaskDataset, VIGO_EMOTIONS, NUM_VIGO_LABELS
+from module1.model import PhoBERTMultiTask
+
+
+def parse_labels(label_str):
+    try:
+        return ast.literal_eval(str(label_str))
+    except Exception:
+        return [27]
+
+
+def load_thresholds(threshold_path, default=0.5):
+    """
+    Load per-label thresholds từ file JSON.
+    Nếu không có file → dùng threshold mặc định 0.5 cho tất cả.
+    """
+    if os.path.exists(threshold_path):
+        with open(threshold_path, 'r', encoding='utf-8') as f:
+            threshold_dict = json.load(f)
+        thresholds = np.array([
+            threshold_dict.get(label, default)
+            for label in VIGO_EMOTIONS
+        ], dtype=np.float32)
+        print(f"✅ Loaded tuned thresholds từ: {threshold_path}")
+    else:
+        thresholds = np.full(NUM_VIGO_LABELS, default, dtype=np.float32)
+        print(f"⚠️  Không tìm thấy threshold file → dùng threshold={default} cho tất cả")
+    return thresholds
+
+
+def test():
+    DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    MAX_LEN    = 128
+    BATCH_SIZE = 32
+
+    print(f"🚀 Đánh giá trên: {DEVICE}")
+
+    # ==================== ĐƯỜNG DẪN ====================
+    model_path      = os.path.join(project_root, 'checkpoints','Module#1 ver 2.3', 'best_multitask_model.pth')
+    threshold_path  = os.path.join(project_root, 'checkpoints', 'Module#1 ver 2.3','emotion_thresholds.json')
+    emo_test_path   = os.path.join(project_root, 'data', 'processed', 'emotion_test.csv')
+    vihsd_test_path = os.path.join(project_root, 'data', 'processed', 'vihsd_test_clean.xlsx')
+
     tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
-    cleaner = TextCleaner(os.path.join(project_root, 'data', 'external', 'Xử lý teencode.xlsx'))
 
-    # 1. Load Data (Tương tự như lúc Train nhưng dành cho Test)
-    df_uit = pd.read_excel(uit_test_path)
-    df_vihsd = pd.read_excel(vihsd_test_path)
+    # ==================== LOAD THRESHOLDS ====================
+    thresholds = load_thresholds(threshold_path)
 
-    # Mapping nhãn Emotion (Phải khớp với lúc Train)
-    emotion_list = ['Anger', 'Disgust', 'Enjoyment', 'Fear', 'Other', 'Sadness', 'Surprise']
-    emo_map = {label: i for i, label in enumerate(emotion_list)}
+    # ==================== LOAD TEST DATA ====================
+    df_emo  = pd.read_csv(emo_test_path)
+    df_hate = pd.read_excel(vihsd_test_path)
 
-    # Gộp data test để chạy 1 lượt (hoặc chạy riêng từng bộ tùy Giang)
-    data_test = pd.concat([
-        pd.DataFrame({'text': df_uit['Sentence'], 'emo': df_uit['Emotion'].map(emo_map), 'hate': -100}),
-        pd.DataFrame({'text': df_vihsd['cmt_col'], 'emo': -100, 'hate': df_vihsd['labels']})
-    ], ignore_index=True)
-
-    test_ds = MultiTaskDataset(
-        texts=data_test['text'].values,
-        emotion_labels=data_test['emo'].values,
-        hate_labels=data_test['hate'].values,
+    ds_emo = MultiTaskDataset(
+        texts=df_emo['text'].values,
+        emotion_labels=df_emo['labels'].apply(parse_labels).tolist(),
+        hate_labels=np.full(len(df_emo), -100, dtype=np.int64),
         tokenizer=tokenizer,
-        max_len=128  
+        max_len=MAX_LEN,
+        emotion_source='vigo'
     )
-    test_loader = DataLoader(test_ds, batch_size=16)
+    ds_hate = MultiTaskDataset(
+        texts=df_hate['cmt_col'].values,
+        emotion_labels=None,
+        hate_labels=df_hate['labels'].values.astype(np.int64),
+        tokenizer=tokenizer,
+        max_len=MAX_LEN,
+        emotion_source='none'
+    )
+    print(f"✅ Emotion test: {len(ds_emo)} | Hate test: {len(ds_hate)}")
 
-    # 2. Load Model Multi-task
-    model = PhoBERTMultiTask(num_emotion_labels=7, num_hate_labels=3)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.to(device)
+    ds_all = ConcatDataset([ds_emo, ds_hate])
+    loader = DataLoader(ds_all, batch_size=BATCH_SIZE)
+
+    # ==================== LOAD MODEL ====================
+    model = PhoBERTMultiTask(num_hate_labels=3, num_emotion_labels=NUM_VIGO_LABELS)
+    model.load_state_dict(
+        torch.load(model_path, map_location=DEVICE, weights_only=True)
+    )
+    model.to(DEVICE)
     model.eval()
 
-    emo_preds, emo_true = [], []
-    hate_preds, hate_true = [], []
+    # ==================== PREDICT ====================
+    emo_probs_all, emo_true_all = [], []
+    hate_preds, hate_true       = [], []
 
-    print("📊 Đang dự đoán...")
+    print("\n📊 Đang dự đoán...")
     with torch.no_grad():
-        for batch in test_loader:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            
-            # Model trả về 2 output
-            logits_e, logits_h = model(input_ids, attention_mask)
-            
-            # Lấy dự đoán
-            p_e = torch.max(logits_e, dim=1)[1].cpu().numpy()
-            p_h = torch.max(logits_h, dim=1)[1].cpu().numpy()
-            
-            # Lấy nhãn thật
-            t_e = batch['emotion_labels'].numpy()
-            t_h = batch['hate_labels'].numpy()
+        for batch in loader:
+            input_ids      = batch['input_ids'].to(DEVICE)
+            attention_mask = batch['attention_mask'].to(DEVICE)
+            emotion_labels = batch['emotion_labels']
+            hate_labels    = batch['hate_labels']
+            has_emotion    = batch['has_emotion']
 
-            # Chỉ lưu những câu có nhãn thực sự (khác -100)
-            mask_e = t_e != -100
-            emo_preds.extend(p_e[mask_e])
-            emo_true.extend(t_e[mask_e])
+            emo_logits, hate_logits = model(input_ids, attention_mask)
 
-            mask_h = t_h != -100
-            hate_preds.extend(p_h[mask_h])
+            # Emotion — lưu probs để apply tuned threshold sau
+            probs  = torch.sigmoid(emo_logits).cpu().numpy()
+            mask_e = has_emotion.bool().numpy()
+            if mask_e.any():
+                emo_probs_all.append(probs[mask_e])
+                emo_true_all.append(emotion_labels[mask_e].numpy())
+
+            # Hate — single-label
+            h_preds = torch.max(hate_logits, dim=1)[1].cpu().numpy()
+            t_h     = hate_labels.numpy()
+            mask_h  = t_h != -100
+            hate_preds.extend(h_preds[mask_h])
             hate_true.extend(t_h[mask_h])
 
-    # 3. Hiển thị kết quả
-    print("\n" + "="*20 + " EMOTION REPORT " + "="*20)
-    print(classification_report(emo_true, emo_preds, target_names=emotion_list))
+    # ==================== EMOTION REPORT ====================
+    print("\n" + "="*20 + " EMOTION REPORT (Multi-label 28 nhãn) " + "="*20)
 
+    if emo_probs_all:
+        all_probs = np.concatenate(emo_probs_all, axis=0)  # [N, 28]
+        all_true  = np.concatenate(emo_true_all,  axis=0)  # [N, 28]
+
+        # Áp dụng threshold mặc định 0.5
+        preds_default = (all_probs > 0.5).astype(int)
+        f1_micro_def  = f1_score(all_true, preds_default, average='micro', zero_division=0)
+        f1_macro_def  = f1_score(all_true, preds_default, average='macro', zero_division=0)
+
+        # Áp dụng tuned threshold per-label
+        preds_tuned = np.zeros_like(all_probs, dtype=int)
+        for i, thresh in enumerate(thresholds):
+            preds_tuned[:, i] = (all_probs[:, i] > thresh).astype(int)
+        f1_micro_tuned = f1_score(all_true, preds_tuned, average='micro', zero_division=0)
+        f1_macro_tuned = f1_score(all_true, preds_tuned, average='macro', zero_division=0)
+
+        print(f"\n📊 So sánh threshold:")
+        print(f"   @threshold=0.5:    F1 micro={f1_micro_def:.4f} | F1 macro={f1_macro_def:.4f}")
+        print(f"   @tuned threshold:  F1 micro={f1_micro_tuned:.4f} | F1 macro={f1_macro_tuned:.4f}  "
+              f"(+{f1_micro_tuned-f1_micro_def:.4f} micro | +{f1_macro_tuned-f1_macro_def:.4f} macro)")
+
+        # Per-label F1 với tuned threshold — sắp xếp từ thấp đến cao
+        f1_per = f1_score(all_true, preds_tuned, average=None, zero_division=0)
+        sorted_labels = sorted(zip(VIGO_EMOTIONS, f1_per, thresholds), key=lambda x: x[1])
+
+        print("\n⚠️  Nhãn F1 thấp nhất (bottom 10):")
+        for label, f1, thresh in sorted_labels[:10]:
+            bar = '█' * int(f1 * 20)
+            print(f"  {label:20s} F1={f1:.3f} thresh={thresh:.2f} {bar}")
+
+        print("\n✅ Nhãn F1 cao nhất (top 10):")
+        for label, f1, thresh in sorted_labels[-10:]:
+            bar = '█' * int(f1 * 20)
+            print(f"  {label:20s} F1={f1:.3f} thresh={thresh:.2f} {bar}")
+
+    # ==================== HATE SPEECH REPORT ====================
     print("\n" + "="*20 + " HATE SPEECH REPORT " + "="*20)
-    print(classification_report(hate_true, hate_preds, target_names=['Clean', 'Offensive', 'Hate']))
+    print(classification_report(
+        hate_true, hate_preds,
+        target_names=['Clean', 'Offensive', 'Hate']
+    ))
+
 
 if __name__ == "__main__":
-    evaluate()
+    test()

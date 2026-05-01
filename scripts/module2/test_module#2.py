@@ -6,8 +6,9 @@ import numpy as np
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.metrics import f1_score
+from sklearn.metrics import classification_report, f1_score
 import pickle
+from sklearn.metrics import classification_report
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.module2.module2_dataset import MentalHealthMultiLabelDataset
@@ -61,7 +62,7 @@ def test():
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     model = MentalHealthMultiLabelClassifier(num_labels=num_labels).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
 
     # Dự đoán toàn bộ test set
@@ -90,6 +91,43 @@ def test():
         acc = top_k_accuracy(all_labels, all_probs, k=k)
         print(f"   Top-{k} accuracy: {acc:.4f}")
 
+    
+    # Thêm vào test.py sau phần in Top-k accuracy
+
+    print("\n=== PER-LABEL F1 REPORT ===")
+    preds_binary = (all_probs > 0.5).astype(int)
+
+    # Lấy index của label "Khác"
+    khac_idx = label_names.index('Khác') if 'Khác' in label_names else None
+
+    report = classification_report(
+        all_labels, 
+        preds_binary,
+        target_names=label_names,
+        zero_division=0,
+        output_dict=True
+    )
+
+    # In các nhãn có F1 thấp nhất
+    print("\n⚠️  Nhãn có F1 thấp nhất (bottom 10):")
+    sorted_labels = sorted(
+        [(k, v['f1-score']) for k, v in report.items() 
+        if k not in ['micro avg', 'macro avg', 'weighted avg', 'samples avg']],
+        key=lambda x: x[1]
+    )
+    for label, f1 in sorted_labels[:10]:
+        print(f"  {label[:45]:45s} F1={f1:.3f}")
+
+    print("\n✅ Nhãn có F1 cao nhất (top 10):")
+    for label, f1 in sorted_labels[-10:]:
+        print(f"  {label[:45]:45s} F1={f1:.3f}")
+
+    if khac_idx is not None:
+        khac_f1 = report.get('Khác', {}).get('f1-score', 0)
+        khac_precision = report.get('Khác', {}).get('precision', 0)
+        khac_recall = report.get('Khác', {}).get('recall', 0)
+        print(f"\n🔍 'Khác' riêng: Precision={khac_precision:.3f} | Recall={khac_recall:.3f} | F1={khac_f1:.3f}")
+
     # Dự đoán mẫu (tùy chọn)
     sample_texts = [
         "Tôi cảm thấy buồn bã, mất ngủ, không muốn gặp ai, nghĩ đến cái chết.",
@@ -100,6 +138,32 @@ def test():
         top5 = predict_top_k(model, tokenizer, text, label_names, device, k=5)
         print(f"\nText: {text[:80]}...")
         print(f"Top 5: {top5}")
+
+    
+    # # Thêm vào test.py để xem confusion matrix của 2 nhãn này
+    # from sklearn.metrics import confusion_matrix
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+
+    # # Tìm index của 2 nhãn
+    # idx_tl = label_names.index('Rối loạn tâm lý')
+    # idx_tt = label_names.index('Rối loạn tâm thần')
+
+    # # Xem model đang nhầm chúng với nhãn nào
+    # print("\n=== PHÂN TÍCH NHÃN CONFUSE ===")
+    # for idx, name in [(idx_tl, 'Rối loạn tâm lý'), (idx_tt, 'Rối loạn tâm thần')]:
+    #     true_pos = all_labels[:, idx]
+    #     pred_pos = (all_probs[:, idx] > 0.5).astype(int)
+        
+    #     # Khi nhãn này đúng là 1, model predict gì thay vào?
+    #     wrong_samples = np.where((true_pos == 1) & (pred_pos == 0))[0]
+    #     print(f"\n'{name}' bị miss {len(wrong_samples)} samples")
+    #     print("Model thay vào đó predict:")
+    #     for i in wrong_samples[:5]:  # xem 5 mẫu đầu
+    #         top_pred_idx = np.argsort(-all_probs[i])[:3]
+    #         top_preds = [(label_names[j], f"{all_probs[i][j]:.2f}") for j in top_pred_idx]
+    #         print(f"  → {top_preds}")
+
 
 if __name__ == "__main__":
     test()

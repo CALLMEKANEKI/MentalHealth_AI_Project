@@ -5,7 +5,7 @@ __pycache__/
 .venv/
 venv/
 env/
-
+claude-code-system/
 # Data & Models (Vì chúng rất nặng, thường không đưa lên GitHub)
 data/raw/
 data/processed/

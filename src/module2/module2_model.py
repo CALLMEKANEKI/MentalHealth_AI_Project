@@ -17,8 +17,6 @@ class MentalHealthMultiLabelClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         outputs = self.phobert(input_ids=input_ids, attention_mask=attention_mask)
-        # Mean pooling
-        mask_expanded = attention_mask.unsqueeze(-1).expand(outputs.last_hidden_state.size()).float()
-        pooled = torch.sum(outputs.last_hidden_state * mask_expanded, 1) / torch.clamp(mask_expanded.sum(1), min=1e-9)
+        pooled = outputs.last_hidden_state[:, 0, :]  # lấy token [CLS]
         logits = self.classifier(pooled)
-        return logits   # no sigmoid, sẽ dùng BCEWithLogitsLoss
+        return logits

@@ -88,8 +88,16 @@ def train():
     # Tính pos_weight cho cân bằng
     pos_freq = train_labels.sum(axis=0)
     neg_freq = len(train_labels) - pos_freq
-    pos_weight = torch.tensor(neg_freq / (pos_freq + 1e-6), dtype=torch.float).to(DEVICE)
-    print("pos_weight (top 10):", pos_weight[:10])
+
+    # Giới hạn pos_weight tối đa để tránh nhãn hiếm được weight quá cao
+    raw_weight = neg_freq / (pos_freq + 1e-6)
+    MAX_WEIGHT = 20.0  # Không cho weight vượt quá 20x
+    pos_weight = torch.tensor(
+        np.clip(raw_weight, 1.0, MAX_WEIGHT), 
+        dtype=torch.float
+    ).to(DEVICE)
+
+    print(f"pos_weight: min={pos_weight.min():.1f}, max={pos_weight.max():.1f}, mean={pos_weight.mean():.1f}")
 
     # ==================== TOKENIZER & DATALOADER ====================
     tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
