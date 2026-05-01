@@ -9,4 +9,8 @@ torch
 torchvision
 torchaudio
 emoji
+<<<<<<< HEAD
 matplotlib
+=======
+seaborn
+>>>>>>> ver_1.9.3

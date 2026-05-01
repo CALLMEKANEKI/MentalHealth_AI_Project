@@ -1,0 +1,286 @@
+Rối loạn lưỡng cực (Bipolar disorder): 460
+Rối loạn lo âu: 373
+Rối loạn ám ảnh cưỡng chế (OCD): 368
+Rối loạn ăn uống: 301
+Chứng nghiện: 299
+Nghiện mạng xã hội: 278
+Tâm thần phân liệt: 277
+Mất ngủ: 269
+Rối loạn phổ tự kỷ (ASD): 248
+Rối loạn giấc ngủ (Hypersomnia): 227
+Rối loạn tăng động giảm chú ý (ADHD): 182
+Chán ăn tâm thần: 173
+Chứng sợ không gian hẹp (Claustrophobia): 173
+Ảo Thanh: 163
+Rối loạn tâm thần: 154
+Hoang tưởng: 146
+Rối loạn lo âu lan tỏa (GAD): 143
+Rối loạn thần kinh thực vật: 140
+Rối loạn cường dương: 137
+Rối loạn hoảng sợ (Panic disorder): 133
+Căng thẳng Stress: 132
+Rối loạn cảm xúc: 130
+Rối loạn loạn thần: 129
+Rối loạn điều chỉnh (AD): 116
+Rối loạn tiền đình: 116
+Hội chứng Stendhal: 115
+Rối loạn phát triển: 114
+Rối loạn căng thẳng sau sang chấn (PTSD): 105
+Rối loạn trầm cảm: 104
+Hội chứng sợ khoảng rộng (agoraphobia): 100
+Rối loạn lo âu xã hội (SAD): 97
+Bệnh Parkinson: 94
+Hội chứng Fregoli: 88
+Hội chứng Pica: 86
+Bệnh CreutzfeldtJakob: 83
+Hội chứng Cotard: 83
+Hội chứng Hoarding: 83
+Hội chứng Folie à Deux: 82
+Chứng háu ăn tâm thần: 78
+Rối loạn nhân dạng phân ly (DID): 77
+Rối loạn chức năng tình dục: 76
+Rối loạn nhân cách ái kỷ (NPD): 75
+Hội chứng hoang tưởng được yêu (Erotomania): 70
+Rối loạn nhân cách chống đối xã hội (ASPD): 70
+Rối loạn dạng cơ thể: 68
+Hội chứng Othello: 67
+Hội chứng Stockholm: 60
+Rối loạn khí sắc: 59
+Rối loạn nhân cách ranh giới (BPD): 56
+Hội chứng Exploding Head: 55
+Rối loạn điều hòa khí sắc: 55
+Bệnh rối loạn tâm thần ở tuổi già: 55
+Rối loạn hệ thần kinh thực vật ở trẻ em: 54
+Hội chứng Munchausen: 53
+Bệnh Alzheimer: 50
+Hội chứng Diogenes: 50
+Rối loạn tâm lý: 50
+Rối loạn nhân cách phân liệt (ScPD): 50
+Rối loạn nhân cách né tránh (AVPD): 47
+Rối loạn hành vi: 47
+Hội chứng Capgras: 46
+Hội chứng Alice in Wonderland: 45
+Hội chứng Lima: 44
+Rối loạn nhân cách kịch (HPD): 42
+Rối loạn nhân cách phụ thuộc (DPD): 40
+Trầm cảm sau sinh: 40
+Rối loạn căng thẳng cấp tính (ASD): 38
+Rối loạn nhận thức thần kinh: 33
+Rối loạn phân ly (Dissosiative Disorder): 32
+Rối loạn cảm xúc lưỡng cực: 29
+Hội chứng sợ bị bỏ rơi: 27
+Rối loạn nhân cách hoang tưởng (PPD): 26
+Rối loạn lo âu đặc hiệu (Phobia Disorder): 26
+Rối loạn cảm xúc tiền kinh nguyệt: 25
+Rối loạn tích trữ (Hoarding disorder): 25
+Hội chứng giấc ngủ kinh hoàng (sleep terrors): 25
+Rối loạn giải thể nhân cách: 25
+Rối loạn nhân cách (PD): 24
+Rối loạn ngôn ngữ: 22
+Ảo giác: 22
+Rối loạn nhân cách ám ảnh nghi thức (OCPD): 21
+Rối loạn giao tiếp xã hội: 20
+Rối loạn lo âu nghi bệnh: 20
+Rối loạn cảm xúc phân liệt: 19
+Rối loạn ám ảnh sợ: 19
+Quên phân ly: 19
+Ám ảnh cụ thể (ám ảnh sợ đặc hiệu): 19
+Rối loạn ác mộng: 18
+Ám ảnh vì từng bị xâm hại tình dục: 18
+Rối loạn phản ứng gắn bó: 17
+Rối loạn tic vận động: 15
+Rối loạn tic nhất thời: 15
+Rối loạn căng trương lực: 15
+Rối loạn trầm cảm tái diễn: 15
+Rối loạn dạng phân biệt: 14
+Rối loạn trầm cảm thứ đẳng (Minor Depressive Disorder): 14
+Hội chứng Fomo: 14
+Rối loạn thách thức chống đối (ODD): 14
+Ám ảnh tình dục: 13
+Rối loạn vận động định hình: 13
+Rối loạn lo âu do một bệnh cơ thể khác: 13
+Rối loạn lo âu đau ốm (Illness Anxiety Disorder): 13
+Rối loạn dị dạng cơ thể: 12
+Rối loạn phát âm: 12
+Rối loạn học biệt định: 12
+Rối loạn dị dạng cơ thể (BDD): 12
+Hội chứng sợ một mình (Monophobia): 12
+Rối loạn hỗn hợp lo âu và trầm cảm: 12
+Rối loạn điều hòa vận động: 11
+Rối loạn cảm xúc theo mùa (SAD): 11
+Rối loạn lo âu do một chất/thuốc: 10
+Rối loạn lo âu bệnh tật (Hypochondria): 10
+Bệnh Down: 10
+Rối loạn ứng xử: 10
+Rối loạn cư xử (CD): 10
+Catatonia (Hội chứng căng trương lực): 10
+Loạn thần sau sinh: 10
+Rối loạn Tic: 9
+Rối loạn Tourette: 9
+Hội chứng Rett: 9
+Rối loạn trầm cảm dai dẳng (PDD): 9
+Rối loạn bột phát từng cơn: 9
+Hội chứng mệt mỏi mãn tính: 9
+Rối loạn thích ứng: 8
+Ám ảnh: 8
+Hội chứng Tourette: 8
+Rối loạn phân liệt cảm xúc: 8
+Rối loạn tâm thần và hành vi do dử dụng nhiều chất ma túy: 8
+Hội chứng ảo tưởng Capgras: 7
+Hội chứng Fragile X: 7
+Chậm phát triển: 7
+Hội chứng sợ nước: 7
+Rối loạn điều hòa khí sắc (Disruptive Mood Dysregulation Disorder): 7
+Rối loạn ứng xử (Conduct disorder): 7
+Rối loạn ngôn ngữ (Language Disorder): 7
+Rối loạn nhân diện gương mặt (Prosopagnosia): 7
+Ám ảnh tích trữ: 6
+Rối loạn mặc cảm ngoại hình (Body Dysmorphic Disorder): 6
+Hội chứng nghiện bứt tóc: 6
+Hội chứng ám ảnh tình yêu: 6
+Rối loạn động tác định hình: 6
+Hội chứng sợ ánh sáng (Heliophobia): 6
+Hội chứng ảo giác Charles Bonnet: 6
+Bệnh Huntington: 6
+Chứng sợ máu (Hemophobia): 6
+Hội chứng Couvade: 6
+Chứng sợ gương: 6
+Hội chứng Savant: 6
+Hội chứng KleineLevin: 6
+Chứng mất ngôn ngữ (Aphasia): 6
+Rối Loạn Nhổ Lông Tóc (Trichotillomania): 6
+Rối loạn lo âu chia ly: 6
+Rối loan lo âu phân ly: 6
+Rối loạn nghiện (Addictive Disorder): 6
+Rối loạn học tập (LD): 6
+Rối loạn nghi bệnh: 6
+Rối loạn lo âu độc lập: 5
+Hội chứng sợ đau ( Algophobia): 5
+Hội chứng sợ kết hôn: 5
+Hội chứng sợ hãi khi đi ngủ (Somniphobia): 5
+Hội chứng WernickeKorsakoff (WKS): 5
+Hội chứng sợ độ sâu: 5
+Hội chứng Decidophobia: 5
+Hội chứng sợ tình dục: 5
+Chứng sợ hãi đặc hiệu: 5
+Hội chứng sợ bệnh viện: 5
+Hội chứng say Caffeine: 5
+Hội chứng rút lui caffeine: 5
+Rối loạn bùng phát gián đoạn (Intermittent Explosive Disorder): 5
+Hội chứng West: 5
+Hội chứng thiên thần: 5
+Hội chứng PraderWilli: 5
+Rối loạn định dạng giới: 5
+Hội chứng sợ nước (Aquaphobia): 5
+Hội chứng sợ độ cao (Acrophobia): 5
+Hội chứng sợ chó (Cynophobia): 5
+Hội chứng sợ nấu ăn (Mageirocophobia): 5
+Hội chứng sợ thời gian trôi: 5
+Hội chứng sợ vật nhọn: 5
+Hội chứng burnout (Burnout syndrome): 5
+Hội chứng Sợ nói chuyện trước đám đông (Glossophobia): 5
+Hội chứng sợ người lạ (Xenophobia): 5
+Rối loạn thách thức chống đối: 5
+Rối loạn triệu chứng đau cơ thể: 5
+Rối loạn ám ảnh dị dạng cơ thể: 5
+Rối loạn âu nghi bệnh: 5
+Rối loạn triệu chứng cơ thể: 5
+Rối loạn tiền đình ngoại biên: 5
+Suy nghĩ muốn tự tử: 5
+Ám ảnh sợ chuyên biệt: 4
+Rối loạn tic: 4
+Rối loạn thách thức chống đối là (ODD): 4
+Hội chứng sợ yêu (Philophobia): 4
+Hội chứng sợ gọi điện thoại hoặc nghe điện thoại (Telephobia): 4
+Hội chứng Agyrophobia: 4
+Rối loạn học tập (learning disability): 4
+Rối loạn vận động tay chân theo chu kỳ (Periodic limb movement disorder – PLMD): 4
+Bệnh mất trí Alzheimer’s: 4
+Rối loạn cư xử (Conduct Disorder – CD): 4
+Bệnh hoang tưởng ghen tuông (hội chứng Othello): 4
+Hội chứng sợ bóng tối: 4
+Chậm phát triển trí tuệ: 4
+Rối loạn cương cứng: 4
+Rối loạn cực khoái ở phái nữ: 4
+Hội chứng sợ kim tiêm: 4
+Rối loạn dung nạp rượu: 4
+Hội chứng sợ già: 4
+Hội chứng SmithMagenis (SMS): 4
+Chứng rối loạn thần kinh: 4
+Hội chứng sợ thất bại: 4
+Hội chứng sợ tắm rửa: 4
+Hội chứng sợ đàn ông: 4
+Hội chứng sợ thang máy, hay Elevatophobia: 4
+Rối loạn giác quan: 4
+Hội chứng sợ đám đông (Enochlophobia): 4
+Hội chứng mệt mỏi kinh niên: 4
+Rối loạn kiểm soát xung động (Kleptomania): 4
+Suy giảm trí nhớ: 4
+Hội chứng chân tay không yên: 4
+Nói lắp: 4
+Rối loạn phát triển trí tuệ: 3
+Rối loạn điều hòa: 3
+Hội chứng tăng vận động khớp: 3
+Rối loạn: 3
+Bệnh hoang tưởng ảo giác Cotard: 3
+Hội chứng tiền kinh nguyệt (PMS): 3
+Bệnh Wilson: 3
+Hội chứng sợ lỗ: 3
+Chậm phát triển ngôn ngữ: 3
+Nỗi Sợ Bị Bỏ Lỡ (FOMO): 3
+Rối loạn chuyển hóa: 3
+Hội Chứng Sợ Bệnh Viện Nosocomephobia: 3
+Rối Loạn Bản Thể (Somatic Symptom Disorder): 3
+Nghiện rượu: 3
+Rối loạn giả bệnh: 3
+Mất Hứng Thú Trong Cuộc Sống (Hội Chứng Anhedonia): 3
+Rối loạn xử lý cảm giác: 3
+Rối loạn vận động tay chân theo định kỳ: 3
+Hội chứng sợ lỗ tròn (Trypophobia): 3
+Hội chứng sợ ánh nhìn: 3
+Rối loạn mặc cảm ngoại hình: 3
+Imposter syndrome hội chứng kẻ giả mạo: 3
+Chứng ám ảnh quá khứ: 3
+Hội chứng Sjogren: 3
+Rối loạn tư duy: 3
+Hội chứng cai rượu: 3
+Bệnh sa sút trí tuệ do mạch máu não: 3
+Bệnh rối loạn thần kinh tự chủ rối loạn thần kinh thực vật: 3
+Bệnh rối loạn giả tượng rối loạn giả bệnh: 3
+Bệnh rối loạn phản ứng gắn bó: 3
+Bệnh mê sảng: 3
+Rối loạn thăng bằng: 3
+Rối loạn di truyền: 3
+Hội chứng Turner: 3
+Rối loạn giai đoạn ngủ thức nâng cao: 3
+Nỗi sợ bị bỏ lỡ (FOMO Fear Of Missing Out): 3
+Chứng lo sợ phân ly (Seperation Anixiety Disorder): 3
+Hội chứng sợ biển (Thalassophobia): 3
+Rối loạn Jumping Frenchmen of Maine: 3
+Hội chứng Peter Pan: 3
+Hội chứng trí nhớ siêu phàm: 3
+Rối loạn giải thể nhân cách (Dissosiative Personality Disorder): 3
+Hội chứng kẻ mạo danh (Imposter Syndrome): 3
+Rối loạn chống đối (ODD): 3
+Chứng sợ bệnh viện (Nosocomephobia): 3
+Rối loạn Tic chuyển động đơn giản: 3
+Rối loạn lưu loát ở trẻ: 3
+Rối loạn nói lắp: 3
+Rối loạn cảm xúc thực tổn: 3
+Rối loạn nhận thức nhẹ: 3
+Rối loạn tâm thần và hành vi do sử dụng các chất gây ảo giác: 3
+Rối loạn loại phân liệt: 3
+Chậm phát triển tâm thần: 3
+Rối loạn dục tính: 3
+Rối loạn bản sắc giới tính: 3
+Bệnh mất trí giả hiệu: 3
+Chứng rối loạn quan hệ gắn bó: 3
+Chứng rối loạn ứng xử: 3
+Rối loạn quấy nhiễu: 3
+Chứng rối loạn học tập: 3
+Rối loạn khả năng giao tiếp: 3
+Rối loạn khả năng vận động phối hợp: 3
+Hội chứng Kocsakop: 3
+Hội chứng kích động thanh xuân: 3
+Hội chứng lú lẫn: 3
+Rối loạn bùng phát gián đoạn: 3
