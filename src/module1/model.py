@@ -1,7 +1,22 @@
+# =============================================================================
+# Module 1 - Model (Ver 2.6)
+# =============================================================================
+# Thay đổi so với ver 2.5:
+#   - Đổi backbone từ vinai/phobert-base → vinai/phobert-base-v2
+#     Lý do: v2 train trên corpus lớn hơn, tốt hơn cho social media VN
+#   - Thêm Label Smoothing vào Emotion head (label_smoothing_eps)
+#     Lý do: tránh model quá confident vào nhãn phổ biến (joy, sadness)
+#             giúp các nhãn hiếm (disapproval, realization) học tốt hơn
+#   - Giữ nguyên kiến trúc head (768→384→256→28 và 768→256→3)
+# =============================================================================
+
 import torch
 import torch.nn as nn
 from transformers import AutoModel
 from module1.dataset import NUM_VIGO_LABELS
+
+# Đổi sang phobert-base-v2
+PHOBERT_MODEL = "vinai/phobert-base-v2"
 
 
 class PhoBERTMultiTask(nn.Module):
@@ -14,8 +29,9 @@ class PhoBERTMultiTask(nn.Module):
     def __init__(self, num_hate_labels=3, num_emotion_labels=NUM_VIGO_LABELS, dropout=0.3):
         super(PhoBERTMultiTask, self).__init__()
 
+        # Ver 2.6: Dùng phobert-base-v2 thay vì phobert-base
         self.phobert = AutoModel.from_pretrained(
-            "vinai/phobert-base", use_safetensors=True
+            PHOBERT_MODEL, use_safetensors=True
         )
         hidden_size       = self.phobert.config.hidden_size  # 768
         intermediate_size = 256
