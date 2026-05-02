@@ -1,3 +1,17 @@
+# =============================================================================
+# Module 1 - Train Multitask (Ver 2.5)
+# =============================================================================
+# Thay đổi so với các ver trước:
+#   - Ver 2.2: Baseline tốt nhất (F1 micro=0.5287), không Sampler
+#   - Ver 2.3: Thêm Sampler → làm GIẢM performance (-0.013)
+#   - Ver 2.4: Giữ Sampler + fix preprocess → vẫn thua 2.2
+#   - Ver 2.5: Bỏ Sampler (quay về shuffle=True như 2.2)
+#              + Giữ preprocess fix (HTML, zero-width) từ 2.4
+#              + Giữ teencode mới đã thêm
+#              + pos_weight tính 1 lần trước khi train (không dynamic)
+#              Kỳ vọng: F1 micro ~0.53-0.54
+# =============================================================================
+
 import os
 os.environ["TR_SKIP_TORCH_CHECK"] = "1"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -8,7 +22,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score
 from tqdm import tqdm
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
@@ -38,6 +52,11 @@ def parse_labels(label_str):
 
 
 def compute_pos_weight(df_emo, num_labels=28):
+    """
+    Tính pos_weight từ training data.
+    Gọi 1 LẦN DUY NHẤT trước khi train — không tính lại mỗi epoch
+    vì df_emo không thay đổi trong quá trình train.
+    """
     all_labels = np.zeros(num_labels)
     for label_str in df_emo['labels']:
         indices = ast.literal_eval(str(label_str))
@@ -92,20 +111,25 @@ def evaluate_multitask(model, dataloader, device, threshold=0.5):
 def train():
     # ==================== THAM SỐ ====================
     EPOCHS              = 30
-    BATCH_SIZE          = 12
+    BATCH_SIZE          = 12    # giữ nguyên như ver 2.2
     MAX_LEN             = 128
     DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    EARLY_STOP_PATIENCE = 5
+    EARLY_STOP_PATIENCE = 7
     THRESHOLD           = 0.5
 
     print(f"🚀 Device: {DEVICE}")
+    print(f"   Ver 2.5: No Sampler (shuffle=True) + preprocess fix")
 
     # ==================== ĐƯỜNG DẪN ====================
+    # Emotion: file đã merge từ prepare_data.py (có preprocess fix ver 2.4)
     emo_train_path   = os.path.join(project_root, 'data', 'processed', 'emotion_train.csv')
     emo_valid_path   = os.path.join(project_root, 'data', 'processed', 'emotion_valid.csv')
+
+    # Hate Speech
     vihsd_train_path = os.path.join(project_root, 'data', 'processed', 'vihsd_train_clean.xlsx')
     vihsd_valid_path = os.path.join(project_root, 'data', 'processed', 'vihsd_valid_clean.xlsx')
-    save_path        = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')
+
+    save_path = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
@@ -116,10 +140,8 @@ def train():
     df_hate_train = pd.read_excel(vihsd_train_path)
     df_hate_valid = pd.read_excel(vihsd_valid_path)
 
-    n_emo  = len(df_emo_train)
-    n_hate = len(df_hate_train)
-    print(f"✅ Emotion  train={n_emo} | valid={len(df_emo_valid)}")
-    print(f"✅ Hate     train={n_hate} | valid={len(df_hate_valid)}")
+    print(f"✅ Emotion  train={len(df_emo_train)} | valid={len(df_emo_valid)}")
+    print(f"✅ Hate     train={len(df_hate_train)} | valid={len(df_hate_valid)}")
 
     # ==================== TẠO DATASET ====================
     def make_ds(df_emo, df_hate, tokenizer, max_len):
@@ -145,29 +167,15 @@ def train():
     train_ds = make_ds(df_emo_train, df_hate_train, tokenizer, MAX_LEN)
     val_ds   = make_ds(df_emo_valid, df_hate_valid, tokenizer, MAX_LEN)
 
-    # ==================== WEIGHTED SAMPLER ====================
-    # Đảm bảo mỗi batch có cả emotion lẫn hate
-    # Weight tỉ lệ nghịch với số lượng của từng loại
-    total  = n_emo + n_hate
-    w_emo  = total / n_emo   # weight cho emotion samples
-    w_hate = total / n_hate  # weight cho hate samples
-
-    sample_weights = torch.tensor(
-        [w_emo] * n_emo + [w_hate] * n_hate,
-        dtype=torch.float
-    )
-    sampler = WeightedRandomSampler(
-        weights=sample_weights,
-        num_samples=len(sample_weights),
-        replacement=True
-    )
-
-    # Dùng sampler thay shuffle=True
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, sampler=sampler)
-    val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE)
+    # ==================== DATALOADER ====================
+    # Ver 2.5: Dùng shuffle=True — KHÔNG dùng WeightedRandomSampler
+    # Lý do: Sampler (ver 2.3, 2.4) làm giảm F1 hate từ 0.81 → 0.78
+    # shuffle=True (ver 2.2) cho kết quả tốt hơn
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE * 2)
 
     print(f"\n📊 Train total: {len(train_ds)} | Val total: {len(val_ds)}")
-    print(f"   Sampler weight — Emotion: {w_emo:.2f}x | Hate: {w_hate:.2f}x")
+    print(f"   Loader: shuffle=True (NO WeightedRandomSampler)")
 
     # ==================== MÔ HÌNH ====================
     model = PhoBERTMultiTask(num_hate_labels=3, num_emotion_labels=NUM_VIGO_LABELS)
@@ -186,6 +194,7 @@ def train():
     )
 
     # ==================== LOSS ====================
+    # pos_weight tính 1 lần duy nhất — df_emo_train không đổi trong train
     pos_weight = compute_pos_weight(df_emo_train).to(DEVICE)
     print(f"   pos_weight — min={pos_weight.min():.1f} | max={pos_weight.max():.1f} | mean={pos_weight.mean():.1f}")
 
@@ -195,12 +204,14 @@ def train():
     # ==================== TRAINING LOOP ====================
     best_score = 0.0
     patience   = 0
+    nan_count_total = 0
 
     for epoch in range(EPOCHS):
         model.train()
         total_loss = 0
-        nan_count  = 0  # đếm batch bị skip do NaN
+        nan_count  = 0
 
+        # Trọng số loss theo giai đoạn
         if epoch + 1 <= 3:
             w_e, w_h = 0.5, 0.5
             strategy = "Warm-up: Equal Focus"
@@ -225,10 +236,10 @@ def train():
 
             emo_logits, hate_logits = model(input_ids, attention_mask)
 
-            losses = []
+            losses     = []
             loss_e_val = loss_h_val = 0.0
 
-            # ── Emotion loss ──────────────────────────────────────
+            # ── Emotion loss ──────────────────────────────────────────
             mask_e = has_emotion.bool()
             if mask_e.any():
                 loss_e_each = criterion_emotion(
@@ -239,7 +250,7 @@ def train():
                     losses.append(loss_e * w_e)
                     loss_e_val = loss_e.item()
 
-            # ── Hate loss ─────────────────────────────────────────
+            # ── Hate loss ─────────────────────────────────────────────
             mask_h = hate_labels != -100
             if mask_h.any():
                 loss_h_each = criterion_hate(
@@ -250,7 +261,7 @@ def train():
                     losses.append(loss_h * w_h)
                     loss_h_val = loss_h.item()
 
-            # ── Skip batch nếu không có loss hợp lệ ──────────────
+            # ── Skip batch nếu không có loss hợp lệ ──────────────────
             if not losses:
                 nan_count += 1
                 continue
@@ -268,16 +279,18 @@ def train():
                 H=f"{loss_h_val:.2f}"
             )
 
-        # ── Đánh giá ─────────────────────────────────────────────
+        # ── Đánh giá sau mỗi epoch ───────────────────────────────────
         f1_micro, f1_macro, acc_hate = evaluate_multitask(
             model, val_loader, DEVICE, THRESHOLD
         )
         avg_loss = total_loss / max(len(train_loader) - nan_count, 1)
+        nan_count_total += nan_count
 
         print(f"📊 Epoch {epoch+1}: Loss={avg_loss:.4f} | NaN batches skipped={nan_count}")
         print(f"   Emotion → F1 micro={f1_micro:.4f} | F1 macro={f1_macro:.4f}")
         print(f"   Hate    → Acc={acc_hate:.4f}")
 
+        # Combined score: ưu tiên emotion vì khó hơn
         combined_score = (f1_micro * 0.6) + (acc_hate * 0.4)
         print(f"   Combined score: {combined_score:.4f}")
 
@@ -292,7 +305,9 @@ def train():
                 print(f"🛑 Early stopping tại Epoch {epoch+1}")
                 break
 
-    print(f"\n✅ Training hoàn tất. Best combined score: {best_score:.4f}")
+    print(f"\n✅ Training hoàn tất.")
+    print(f"   Best combined score: {best_score:.4f}")
+    print(f"   Tổng NaN batches skipped: {nan_count_total}")
 
 
 if __name__ == "__main__":

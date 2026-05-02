@@ -102,8 +102,18 @@ class TextCleaner:
     def clean(self, text):
         
         # Thêm vào đầu hàm clean() trong preprocess.py
+# BƯỚC 0: Xóa HTML tags trước tất cả
+# BƯỚC 0b: Xóa ký tự zero‑width và chuẩn hoá dấu câu
+#   - Loại bỏ ​, ﻿ (zero‑width space, BOM)
+#   - Chuyển các dấu chấm, ?, ! liên tiếp thành một dấu '.'
+#   - Đảm bảo không còn ký tự HTML entity lẻ
+#   - Các bước này giúp giảm noise cho các nhãn hiếm
         # BƯỚC 0: Xóa HTML tags trước tất cả
         text = re.sub(r'<br\s*/?>', ' ', text)   # <br> → space
+        # BƯỚC 0b: Xóa ký tự zero‑width (U+200B, U+FEFF) và chuẩn hoá dấu câu
+        text = text.replace('​', '').replace('﻿', '')
+        # Chuẩn hoá các dấu chấm, ?, ! liên tiếp thành một dấu '.'
+        text = re.sub(r'[.!?]{2,}', '.', text)
         text = re.sub(r'&quot;', '"', text)       # &quot; → "
         text = re.sub(r'&lt;', '<', text)         # &lt; → 
         text = re.sub(r'&gt;', '>', text)         # &gt; → >
