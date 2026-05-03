@@ -37,9 +37,9 @@ def find_best_thresholds():
     MAX_LEN    = 128
     BATCH_SIZE = 32  # val không cần nhỏ, dùng lớn cho nhanh
 
-    model_path   = os.path.join(project_root, 'checkpoints','Module#1 ver 2.5', 'best_multitask_model.pth')
+    model_path   = os.path.join(project_root, 'checkpoints','Module#1 ver 2.6', 'best_multitask_model.pth')
     emo_val_path = os.path.join(project_root, 'data', 'processed', 'emotion_valid.csv')
-    save_path    = os.path.join(project_root, 'checkpoints','Module#1 ver 2.5', 'emotion_thresholds.json')
+    save_path    = os.path.join(project_root, 'checkpoints','Module#1 ver 2.6', 'emotion_thresholds.json')
 
     print(f"🚀 Device: {DEVICE}")
     print(f"📂 Model: {model_path}")
