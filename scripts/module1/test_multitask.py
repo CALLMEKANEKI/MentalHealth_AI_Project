@@ -59,12 +59,12 @@ def test():
     print(f"🚀 Đánh giá trên: {DEVICE}")
 
     # ==================== ĐƯỜNG DẪN ====================
-    model_path      = os.path.join(project_root, 'checkpoints','Module#1 ver 2.6', 'best_multitask_model.pth')
-    threshold_path  = os.path.join(project_root, 'checkpoints', 'Module#1 ver 2.6','emotion_thresholds.json')
+    model_path      = os.path.join(project_root, 'checkpoints','Module#1 ver 2.7', 'best_multitask_model.pth')
+    threshold_path  = os.path.join(project_root, 'checkpoints', 'Module#1 ver 2.7','emotion_thresholds.json')
     emo_test_path   = os.path.join(project_root, 'data', 'processed', 'emotion_test.csv')
     vihsd_test_path = os.path.join(project_root, 'data', 'processed', 'vihsd_test_clean.xlsx')
 
-    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
+    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
 
     # ==================== LOAD THRESHOLDS ====================
     thresholds = load_thresholds(threshold_path)

@@ -6,7 +6,7 @@ __pycache__/
 venv/
 env/
 claude-code-system/
-reports/
+
 # Data & Models (Vì chúng rất nặng, thường không đưa lên GitHub)
 checkpoints/
 *.pth

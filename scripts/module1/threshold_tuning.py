@@ -44,7 +44,7 @@ def find_best_thresholds():
     print(f"🚀 Device: {DEVICE}")
     print(f"📂 Model: {model_path}")
 
-    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
+    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
 
     # Load val set
     df_val = pd.read_csv(emo_val_path)
