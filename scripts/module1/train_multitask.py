@@ -1,15 +1,16 @@
 # =============================================================================
-# Module 1 - Train Multitask (Ver 2.5)
+# Module 1 - Train Multitask (Ver 2.6)
 # =============================================================================
-# Thay đổi so với các ver trước:
-#   - Ver 2.2: Baseline tốt nhất (F1 micro=0.5287), không Sampler
-#   - Ver 2.3: Thêm Sampler → làm GIẢM performance (-0.013)
-#   - Ver 2.4: Giữ Sampler + fix preprocess → vẫn thua 2.2
-#   - Ver 2.5: Bỏ Sampler (quay về shuffle=True như 2.2)
-#              + Giữ preprocess fix (HTML, zero-width) từ 2.4
-#              + Giữ teencode mới đã thêm
-#              + pos_weight tính 1 lần trước khi train (không dynamic)
-#              Kỳ vọng: F1 micro ~0.53-0.54
+# Lịch sử các ver:
+#   Ver 2.2: Baseline (F1 micro=0.5287, Hate=0.81)
+#            shuffle=True, BCEWithLogitsLoss, pos_weight clip 20.0
+#   Ver 2.3: Thêm WeightedRandomSampler → F1=0.5161, Hate=0.79 (GIẢM, bỏ)
+#   Ver 2.4: Giữ Sampler + fix preprocess HTML/zero-width → F1=0.5196 (vẫn thua 2.2)
+#   Ver 2.5: Bỏ Sampler (shuffle=True như 2.2)
+#            + preprocess fix từ 2.4 + teencode mới
+#            → F1 micro=0.5230, Hate=0.80
+#   Ver 2.6: Ver 2.5 + phobert-base-v2 + oversample ×3 nhãn hiếm
+#            → F1 micro=0.5431, F1 macro=0.5285, Hate=0.81  ← BEST
 # =============================================================================
 
 import os
@@ -40,6 +41,7 @@ if src_path not in sys.path:
 
 print(f"📁 project_root: {project_root}")
 
+
 from module1.dataset import MultiTaskDataset, NUM_VIGO_LABELS
 from module1.model import PhoBERTMultiTask
 
@@ -54,8 +56,7 @@ def parse_labels(label_str):
 def compute_pos_weight(df_emo, num_labels=28):
     """
     Tính pos_weight từ training data.
-    Gọi 1 LẦN DUY NHẤT trước khi train — không tính lại mỗi epoch
-    vì df_emo không thay đổi trong quá trình train.
+    Gọi 1 LẦN DUY NHẤT trước khi train — data không thay đổi trong train.
     """
     all_labels = np.zeros(num_labels)
     for label_str in df_emo['labels']:
@@ -111,28 +112,25 @@ def evaluate_multitask(model, dataloader, device, threshold=0.5):
 def train():
     # ==================== THAM SỐ ====================
     EPOCHS              = 30
-    BATCH_SIZE          = 12    # giữ nguyên như ver 2.2
+    BATCH_SIZE          = 12
     MAX_LEN             = 128
     DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     EARLY_STOP_PATIENCE = 7
     THRESHOLD           = 0.5
 
     print(f"🚀 Device: {DEVICE}")
-    print(f"   Ver 2.5: No Sampler (shuffle=True) + preprocess fix")
+    print(f"   Ver 2.6: No Sampler (shuffle=True) + phobert-base-v2 + oversample ×3")
 
     # ==================== ĐƯỜNG DẪN ====================
-    # Emotion: file đã merge từ prepare_data.py (có preprocess fix ver 2.4)
     emo_train_path   = os.path.join(project_root, 'data', 'processed', 'emotion_train.csv')
     emo_valid_path   = os.path.join(project_root, 'data', 'processed', 'emotion_valid.csv')
-
-    # Hate Speech
     vihsd_train_path = os.path.join(project_root, 'data', 'processed', 'vihsd_train_clean.xlsx')
     vihsd_valid_path = os.path.join(project_root, 'data', 'processed', 'vihsd_valid_clean.xlsx')
-
-    save_path = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')
+    save_path        = os.path.join(project_root, 'checkpoints', 'best_multitask_model.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
+    # Ver 2.6: tokenizer khớp với phobert-base-v2
+    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
 
     # ==================== LOAD DATA ====================
     df_emo_train  = pd.read_csv(emo_train_path)
@@ -167,10 +165,7 @@ def train():
     train_ds = make_ds(df_emo_train, df_hate_train, tokenizer, MAX_LEN)
     val_ds   = make_ds(df_emo_valid, df_hate_valid, tokenizer, MAX_LEN)
 
-    # ==================== DATALOADER ====================
-    # Ver 2.5: Dùng shuffle=True — KHÔNG dùng WeightedRandomSampler
-    # Lý do: Sampler (ver 2.3, 2.4) làm giảm F1 hate từ 0.81 → 0.78
-    # shuffle=True (ver 2.2) cho kết quả tốt hơn
+    # shuffle=True — KHÔNG dùng WeightedRandomSampler (làm giảm hate F1)
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE * 2)
 
@@ -194,7 +189,7 @@ def train():
     )
 
     # ==================== LOSS ====================
-    # pos_weight tính 1 lần duy nhất — df_emo_train không đổi trong train
+    # pos_weight tính 1 lần — data không thay đổi trong train
     pos_weight = compute_pos_weight(df_emo_train).to(DEVICE)
     print(f"   pos_weight — min={pos_weight.min():.1f} | max={pos_weight.max():.1f} | mean={pos_weight.mean():.1f}")
 
@@ -211,7 +206,7 @@ def train():
         total_loss = 0
         nan_count  = 0
 
-        # Trọng số loss theo giai đoạn
+        # Loss weight theo giai đoạn
         if epoch + 1 <= 3:
             w_e, w_h = 0.5, 0.5
             strategy = "Warm-up: Equal Focus"
@@ -290,7 +285,6 @@ def train():
         print(f"   Emotion → F1 micro={f1_micro:.4f} | F1 macro={f1_macro:.4f}")
         print(f"   Hate    → Acc={acc_hate:.4f}")
 
-        # Combined score: ưu tiên emotion vì khó hơn
         combined_score = (f1_micro * 0.6) + (acc_hate * 0.4)
         print(f"   Combined score: {combined_score:.4f}")
 

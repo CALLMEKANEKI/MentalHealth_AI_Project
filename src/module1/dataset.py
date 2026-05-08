@@ -117,6 +117,5 @@ class MultiTaskDataset(Dataset):
             'has_emotion': torch.tensor(
                 1.0 if self.emotion_source != 'none' else 0.0,
                 dtype=torch.float
-            ),
-            'index': torch.tensor(idx, dtype=torch.long),
+            )
         }

@@ -30,25 +30,18 @@ print(f"📁 project_root: {project_root}")
 
 from module1.preprocess import TextCleaner
 
-# ==================== CẤU HÌNH ====================
+# ==================== CONFIG ====================
 VIGO_EMOTIONS = [
-    'amusement','excitement','joy','love','desire','optimism',
-    'caring','pride','admiration','gratitude','relief','approval',
-    'realization','surprise','curiosity','confusion','fear',
-    'nervousness','remorse','embarrassment','disappointment',
-    'sadness','grief','disgust','anger','annoyance',
-    'disapproval','neutral'
+    'amusement', 'excitement', 'joy', 'love', 'desire', 'optimism',
+    'caring', 'pride', 'admiration', 'gratitude', 'relief', 'approval',
+    'realization', 'surprise', 'curiosity', 'confusion', 'fear',
+    'nervousness', 'remorse', 'embarrassment', 'disappointment',
+    'sadness', 'grief', 'disgust', 'anger', 'annoyance',
+    'disapproval', 'neutral'
 ]
 
-# Nhãn hiếm cần oversample — dựa trên F1 thấp từ test ver 2.5
-# disapproval(0.27), confusion(0.34), realization(0.35),
-# disappointment(0.36), desire(0.38), excitement(0.41)
-RARE_LABEL_INDICES = [26, 15, 12, 20, 4, 1]  # index trong VIGO_EMOTIONS
-OVERSAMPLE_RATIO   = 3   # duplicate mỗi sample có nhãn hiếm × 3 lần
-MIN_LABEL_COUNT    = 500 # nếu nhãn có < 500 mẫu → oversample
-
-# Mapping VSMEC → ViGoEmotions index
-VSMEC_TO_VIGO = {
+# VSMEC → ViGoEmotions index mapping
+VSMEC_TO_VIGO_INDEX = {
     'Anger':     [24],
     'Disgust':   [23],
     'Enjoyment': [2],
@@ -57,6 +50,13 @@ VSMEC_TO_VIGO = {
     'Surprise':  [13],
     # 'Other' → bỏ
 }
+
+# Oversample nhãn hiếm (dựa trên F1 thấp từ test ver 2.5)
+# disapproval(0.27), confusion(0.34), realization(0.35),
+# disappointment(0.36), desire(0.38), excitement(0.41)
+RARE_LABEL_INDICES = [26, 15, 12, 20, 4, 1]
+OVERSAMPLE_RATIO   = 3    # duplicate ×3 cho nhãn hiếm
+MIN_LABEL_COUNT    = 500  # nhãn < 500 mẫu → oversample
 
 
 def parse_labels(label_str):
@@ -67,52 +67,37 @@ def parse_labels(label_str):
 
 
 def oversample_rare_labels(rows, rare_indices, min_count, ratio):
-    """
-    Duplicate các sample có nhãn hiếm để cân bằng distribution.
-
-    Args:
-        rows:         list of dict {'text': ..., 'labels': [...]}
-        rare_indices: list of label indices cần oversample
-        min_count:    ngưỡng — nhãn có < min_count mẫu mới oversample
-        ratio:        số lần duplicate
-
-    Returns:
-        rows mới (có thêm duplicated samples)
-    """
-    # Đếm số lần mỗi nhãn xuất hiện
+    """Duplicate các sample có nhãn hiếm để cân bằng distribution."""
     label_counts = Counter()
     for row in rows:
         for idx in row['labels']:
             label_counts[idx] += 1
 
-    print("\n📊 Phân bố nhãn trước oversampling (top 10 ít nhất):")
+    print("\n📊 Phân bố nhãn trước oversampling (10 ít nhất):")
     for idx, cnt in sorted(label_counts.items(), key=lambda x: x[1])[:10]:
         name = VIGO_EMOTIONS[idx] if idx < len(VIGO_EMOTIONS) else f'idx_{idx}'
         print(f"   {name:20s} (idx={idx}): {cnt}")
 
-    # Tìm sample có nhãn hiếm
     augmented = []
     for row in rows:
-        labels = row['labels']
         should_oversample = any(
             idx in rare_indices and label_counts[idx] < min_count
-            for idx in labels
+            for idx in row['labels']
         )
         if should_oversample:
-            for _ in range(ratio - 1):  # -1 vì bản gốc đã có
+            for _ in range(ratio - 1):
                 augmented.append(row)
 
     rows_new = rows + augmented
-    print(f"\n✅ Oversample: thêm {len(augmented)} samples")
-    print(f"   Tổng sau oversample: {len(rows_new)}")
+    print(f"\n✅ Oversample: thêm {len(augmented)} samples → tổng {len(rows_new)}")
 
-    # In lại phân bố sau oversample
+    # In phân bố sau oversample
     label_counts_after = Counter()
     for row in rows_new:
         for idx in row['labels']:
             label_counts_after[idx] += 1
 
-    print("\n📊 Phân bố nhãn sau oversampling (các nhãn được oversample):")
+    print("\n📊 Nhãn được oversample:")
     for idx in rare_indices:
         name = VIGO_EMOTIONS[idx] if idx < len(VIGO_EMOTIONS) else f'idx_{idx}'
         before = label_counts[idx]
@@ -139,7 +124,7 @@ def prepare_emotion_data():
 
     splits = [
         ('train', vigo_train, vsmec_train, True),   # True = có oversample
-        ('valid', vigo_valid, vsmec_valid, False),  # False = không oversample val/test
+        ('valid', vigo_valid, vsmec_valid, False),
         ('test',  vigo_test,  vsmec_test,  False),
     ]
 
@@ -161,18 +146,18 @@ def prepare_emotion_data():
         else:
             print(f"⚠️  Không tìm thấy: {vigo_path}")
 
-        # ── 2. VSMEC ─────────────────────────────────────────────
+        # ── 2. VSMEC ──────────────────────────────────────────────
         if os.path.exists(vsmec_path):
             df_vsmec    = pd.read_excel(vsmec_path)
             vsmec_count = 0
             for _, row in df_vsmec.iterrows():
                 emotion = str(row['Emotion']).strip()
-                if emotion not in VSMEC_TO_VIGO:
+                if emotion not in VSMEC_TO_VIGO_INDEX:
                     continue
                 text_clean = cleaner.clean(str(row['Sentence']))
                 if not text_clean.strip():
                     continue
-                rows.append({'text': text_clean, 'labels': VSMEC_TO_VIGO[emotion]})
+                rows.append({'text': text_clean, 'labels': VSMEC_TO_VIGO_INDEX[emotion]})
                 vsmec_count += 1
             print(f"✅ VSMEC: thêm {vsmec_count} samples")
         else:
